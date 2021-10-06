@@ -15,6 +15,7 @@ const partialsPath = path.join(__dirname, '../templates/partials')
 
 const app = express()
 
+
 // template engine configuration
 app.set('view engine', 'hbs')
 app.set('views', viewsPath)
