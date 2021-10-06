@@ -1,98 +1,86 @@
 const path = require('path')
 const express = require('express')
-const dotenv = require('dotenv')
 const hbs = require('hbs')
-dotenv.config()
+const dotenv = require('dotenv').config()
 
 
-const {port} = require('../config/constant').server
+//local imports
+const { geocode } = require("./utils/geocode")
+const { forecast } = require("./utils/forecast")
+const { port } = require('../config/constant').server
+
 const publicDirectoryPath = path.join(__dirname, '../public')
 const viewsPath = path.join(__dirname, '../templates/views')
 const partialsPath = path.join(__dirname, '../templates/partials')
 
 const app = express()
 
+// template engine configuration
 app.set('view engine', 'hbs')
 app.set('views', viewsPath)
 hbs.registerPartials(partialsPath)
 
-
+//static assets configuration
 app.use(express.static(publicDirectoryPath))
 
 // endpoints
 app.get('/', (req, res) => {
   res.render('home', {
-    title: '🛌 Home',
+    title: '🏡 Weather',
   })
 })
 
-
 app.get('/help', (req, res) => {
   res.render('help', {
-    title: 'Help!',
+    title: '🙇‍♂️ Help!',
     helpMessage: 'Aqui você encontra um pouco de ajuda...',
   })
 })
 
 app.get('/about', (req, res) => {
   res.render('about', {
-    title: 'About me',
+    title: '👨‍🦲 About me ',
     name: 'Eberty Junior',
   })
 })
 
-app.get('weather', (req, res) => {
-  res.json({
-    forecast: 'minha previsão do tempo',
-    location: {
-      latitude: 9.87345,
-      longitude: 9.827348
+app.get('/weather', (req, res) => {
+  //retrieve search terms
+  const { search } = req.query
+  if (!search) {
+    return res.status(400).send({ error: 'invalid search term' })
+  }
+  // get weather data
+  geocode(search, (error, geoLocation) => {
+    if (error) {
+      return res.status(400).send({ error })
     }
+    const { latitude, longitude } = geoLocation
+    forecast(latitude, longitude, (error, message) => {
+      if (error) {
+        return res.status(500).send({ error })
+      }
+      res.json({
+        searchTerm: search,
+        forecast: message,
+        location: geoLocation
+      })
+    })
   })
 })
 
-
-app.get('/help*', (req, res) =>{
-  res.send("Topico de ajuda não encontrado")
+app.get('/help/*', (req, res) => {
+  res.send("Tópico de ajuda não encontrado")
 })
 
 app.get('*', (req, res) => {
-  res.send("404 Page not found")
+  res.render('404', {
+    layout: 'error_layout',
+    title: '🔎 404',
+    message: 'This is not the page you are looking for'
+  })
 })
 
 app.listen(port, () => {
-  console.log('🐱‍🏍 Starting app on port ${port}...')
+  console.log(`🚀 Starting app on port ${port}...`)
 })
-
-
-
-
-//const express = require('express')
-//const constants = require('../config/constant')
-
-
-//const app = express()
-//const port = constants.server.port
-
-//app.get('/', (Request, response) = {
-  //  response.send("Respondendo a rota raiz")
-//})
-
-//app.get('/about', (req, res) = {
-
-//})
-
-//app.listen(port, () = {
-//  console.log('Chama, acunha, paoca ${port}...')
-//})
-
-
-
-//const {getWather} = require('/.utiils/weatherService')
-
-//const lat = '-7,2237358', lon = '-39678.3265404'
-
-//getWather(lat, lon, (erro, mensagem) =>{
-    //console.log(erro)
-  //  console.log(mensagem)
-//})
